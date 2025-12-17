@@ -89,6 +89,18 @@ if "%CURRENT_BRANCH%"=="" (
 )
 echo.
 
+REM Check for nested git repositories (can cause issues)
+echo Checking for nested git repositories...
+for /d /r %%d in (.git) do (
+    if exist "%%d" (
+        set "NESTED_GIT=%%d"
+        if not "!NESTED_GIT!"=="%CD%\.git" (
+            echo Warning: Found nested git repository at: %%d
+            echo This may cause issues with git add. Consider removing it.
+        )
+    )
+)
+
 REM Check for uncommitted changes
 git status --porcelain > temp_status.txt 2>nul
 for %%A in (temp_status.txt) do set STATUS_SIZE=%%~zA
