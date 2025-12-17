@@ -12,7 +12,10 @@
     "db:studio": "drizzle-kit studio",
     "db:optimize": "tsx scripts/optimize-database.ts",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "tsx scripts/deploy.ts",
+    "validate-env": "tsx scripts/validate-env.ts",
+    "validate-env:db": "tsx scripts/validate-env.ts validate --check-db"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.3",

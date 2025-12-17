@@ -24,6 +24,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Validate environment variables
+        env:
+          NEON_DEV_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          NODE_ENV: development
+        run: npm run validate-env
+      
       - name: Run linter
         run: npm run lint
       
@@ -31,6 +39,11 @@ jobs:
         env:
           NEON_DEV_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
         run: npm test
+      
+      - name: Run database migrations
+        env:
+          NEON_DEV_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+        run: npm run db:migrate
       
       - name: Build application
         env:
@@ -79,7 +92,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run production database migrations
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: npm run db:migrate
+      
       - name: Deploy to Vercel Production
+        id: deploy
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -88,13 +116,39 @@ jobs:
           vercel-args: '--prod'
           scope: ${{ secrets.VERCEL_ORG_ID }}
       
-      - name: Verify deployment
+      - name: Wait for deployment to be ready
+        run: sleep 30
+      
+      - name: Verify deployment health
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.preview-url }}
         run: |
-          echo "Deployment completed successfully"
-          # Add health check if you have a health endpoint
-          # curl -f https://your-domain.vercel.app/api/health || exit 1
+          echo "Checking deployment health..."
+          HEALTH_URL="${DEPLOYMENT_URL}/api/health"
+          
+          # Retry health check up to 5 times
+          for i in {1..5}; do
+            echo "Health check attempt $i..."
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+            
+            if [ "$RESPONSE" = "200" ]; then
+              echo "✅ Health check passed!"
+              curl -s "$HEALTH_URL" | jq '.'
+              exit 0
+            fi
+            
+            echo "Health check returned: $RESPONSE"
+            if [ $i -lt 5 ]; then
+              echo "Retrying in 10 seconds..."
+              sleep 10
+            fi
+          done
+          
+          echo "❌ Health check failed after 5 attempts"
+          exit 1
       
       - name: Create deployment notification
+        if: success()
         uses: actions/github-script@v7
         with:
           script: |
@@ -105,4 +159,18 @@ jobs:
               state: 'success',
               context: 'Production Deployment',
               description: 'Successfully deployed to production'
+            })
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'failure',
+              context: 'Production Deployment',
+              description: 'Deployment or health check failed'
             })
