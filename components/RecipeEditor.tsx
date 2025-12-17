@@ -696,7 +696,7 @@ export function RecipeEditor({ recipe, onUpdate, onDelete }: RecipeEditorProps) 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
             <h3 id="delete-dialog-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Delete Recipe</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete "{recipe.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{recipe.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button

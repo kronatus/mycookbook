@@ -20,19 +20,21 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // App directory is now stable in Next.js 14, no need for experimental flag
-  
   // Image optimization configuration
   images: {
     // Enable image optimization
     formats: ['image/webp', 'image/avif'],
     
-    // Configure image domains for external images
-    domains: [
-      // Add common recipe image domains
-      'images.unsplash.com',
-      'via.placeholder.com',
-      // Add your own domain if hosting images
+    // Configure remote patterns (replaces deprecated domains)
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
     ],
     
     // Configure image sizes for responsive images
@@ -47,20 +49,11 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Performance optimizations
-  swcMinify: true,
-  
   // Compression
   compress: true,
   
-  // Enable experimental features for better performance
-  experimental: {
-    // Enable optimized CSS loading
-    optimizeCss: true,
-    
-    // Enable server components optimization
-    serverComponentsExternalPackages: ['@neondatabase/serverless'],
-  },
+  // Server components optimization
+  serverExternalPackages: ['@neondatabase/serverless'],
   
   // Headers for caching
   async headers() {

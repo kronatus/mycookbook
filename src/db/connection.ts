@@ -18,13 +18,16 @@ const getDatabaseUrl = () => {
 
 const databaseUrl = getDatabaseUrl();
 
-// In test environment without database URL, create a mock connection
+// In test environment or build time without database URL, create a mock connection
 let sql: any;
 let db: any;
 
-if (!databaseUrl) {
-  if (process.env.NODE_ENV === 'test') {
-    // Create mock functions for testing without database
+// Skip database connection during build time (when NEXT_PHASE is 'phase-production-build')
+const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
+
+if (!databaseUrl || isBuildTime) {
+  if (process.env.NODE_ENV === 'test' || isBuildTime) {
+    // Create mock functions for testing/building without database
     sql = () => Promise.resolve([]);
     db = {
       select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }),
@@ -32,7 +35,7 @@ if (!databaseUrl) {
       update: () => ({ set: () => ({ where: () => ({ returning: () => Promise.resolve([]) }) }) }),
       delete: () => ({ where: () => Promise.resolve({ rowCount: 0 }) }),
     };
-  } else {
+  } else if (!databaseUrl) {
     throw new Error(
       'Database URL not found. Please set NEON_DATABASE_URL or NEON_DEV_DATABASE_URL environment variable.'
     );

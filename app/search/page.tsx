@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { SearchInterface } from '@/components/SearchInterface';
@@ -18,7 +18,7 @@ interface SearchResult {
   };
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -262,9 +262,9 @@ export default function SearchPage() {
                   <div className="text-sm text-gray-500">
                     <p className="mb-2">Search tips:</p>
                     <ul className="list-disc list-inside space-y-1">
-                      <li>Try searching for specific ingredients like "chicken" or "tomato"</li>
-                      <li>Search for cooking methods like "baked" or "grilled"</li>
-                      <li>Look for cuisine types like "italian" or "mexican"</li>
+                      <li>Try searching for specific ingredients like &quot;chicken&quot; or &quot;tomato&quot;</li>
+                      <li>Search for cooking methods like &quot;baked&quot; or &quot;grilled&quot;</li>
+                      <li>Look for cuisine types like &quot;italian&quot; or &quot;mexican&quot;</li>
                     </ul>
                   </div>
                 </div>
@@ -293,5 +293,20 @@ export default function SearchPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center">Loading search...</div>
+        </main>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }

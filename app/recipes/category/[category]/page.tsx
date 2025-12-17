@@ -3,11 +3,12 @@
 import { Navigation } from '@/components/Navigation';
 import { CategoryRecipeBrowser } from '@/components/CategoryRecipeBrowser';
 import { notFound } from 'next/navigation';
+import { use } from 'react';
 
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     category: string;
-  };
+  }>;
 }
 
 const VALID_CATEGORIES = [
@@ -53,7 +54,7 @@ const CATEGORY_INFO = {
 };
 
 export default function CategoryPage({ params }: CategoryPageProps) {
-  const { category } = params;
+  const { category } = use(params);
 
   if (!VALID_CATEGORIES.includes(category)) {
     notFound();

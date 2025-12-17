@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RecipeService } from '../../../../../src/services/recipe-service';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const recipeService = new RecipeService();
 
 // GET /api/recipes/categories/[category] - Get recipes by category
 export async function GET(
   request: NextRequest,
-  { params }: { params: { category: string } }
+  { params }: { params: Promise<{ category: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,8 @@ export async function GET(
     }
 
     // Decode the category parameter in case it contains special characters
-    const category = decodeURIComponent(params.category);
+    const { category: categoryParam } = await params;
+    const category = decodeURIComponent(categoryParam);
 
     const result = await recipeService.getRecipesByCategory(session.user.id, category);
 

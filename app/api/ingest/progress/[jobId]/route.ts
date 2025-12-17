@@ -10,9 +10,9 @@ import { getJob, updateJobProgress } from '../../../../../src/services/job-progr
  */
 async function handleGetProgress(
   request: any,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
-  const { jobId } = params;
+  const { jobId } = await params;
   const userId = request.userId;
 
   if (!jobId) {
@@ -48,9 +48,9 @@ async function handleGetProgress(
  */
 async function handleCancelJob(
   request: any,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
-  const { jobId } = params;
+  const { jobId } = await params;
   const userId = request.userId;
 
   if (!jobId) {

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RecipeService } from '../../../../../src/services/recipe-service';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const recipeService = new RecipeService();
 
 // POST /api/recipes/[id]/scale - Scale a recipe to a different serving size
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -29,8 +29,9 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
     const scaleRequest = {
-      recipeId: params.id,
+      recipeId: id,
       newServings: body.newServings,
       userId: session.user.id
     };

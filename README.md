@@ -85,16 +85,26 @@ A modern web application for aggregating, organizing, and managing your favorite
 
 ### Available Scripts
 
+**Development:**
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
+
+**Testing:**
 - `npm test` - Run tests
 - `npm run test:watch` - Run tests in watch mode
+
+**Database:**
 - `npm run db:generate` - Generate database migrations
 - `npm run db:migrate` - Run database migrations
 - `npm run db:studio` - Open Drizzle Studio
 - `npm run db:optimize` - Optimize database performance
+
+**Git Automation:**
+- `.\scripts\commit-and-push.ps1` (PowerShell) - Smart commit with auto-generated messages
+- `scripts\commit-and-push.bat` (CMD) - Smart commit with auto-generated messages
+- `bash scripts/commit-and-push.sh` (Bash) - Smart commit with auto-generated messages
 
 ### Project Structure
 
@@ -208,6 +218,28 @@ See our [Pull Request Template](.github/pull_request_template.md) for details.
 - `bugfix/*` - Bug fixes
 - `hotfix/*` - Emergency production fixes
 
+## Quick Commands
+
+**Commit and Push Changes:**
+```powershell
+# PowerShell (Recommended)
+.\scripts\commit-and-push.ps1
+
+# Command Prompt
+scripts\commit-and-push.bat
+
+# Bash
+bash scripts/commit-and-push.sh
+```
+
+The script will:
+- ✅ Analyze your changes
+- ✅ Generate a meaningful commit message
+- ✅ Let you approve or customize it
+- ✅ Commit and push to GitHub
+
+See [Commit Guide](.github/COMMIT_GUIDE.md) for details.
+
 ## Documentation
 
 - [Requirements](.kiro/specs/personal-cookbook/requirements.md)
@@ -216,6 +248,7 @@ See our [Pull Request Template](.github/pull_request_template.md) for details.
 - [GitHub Setup Guide](.github/SETUP.md)
 - [Windows Setup Guide](.github/WINDOWS_SETUP.md) - For Windows users
 - [Git Workflow Reference](.github/GIT_WORKFLOW.md)
+- [Smart Commit Guide](.github/COMMIT_GUIDE.md) - Automated commits
 - [Database Documentation](src/db/README.md)
 - [API Documentation](app/api/recipes/README.md)
 

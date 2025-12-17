@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RecipeService } from '../../../../../src/services/recipe-service';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const recipeService = new RecipeService();
 
 // GET /api/recipes/tags/[tag] - Get recipes by tag
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tag: string } }
+  { params }: { params: Promise<{ tag: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,8 @@ export async function GET(
     }
 
     // Decode the tag parameter in case it contains special characters
-    const tag = decodeURIComponent(params.tag);
+    const { tag: tagParam } = await params;
+    const tag = decodeURIComponent(tagParam);
 
     const result = await recipeService.getRecipesByTag(session.user.id, tag);
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RecipeService } from '../../../src/services/recipe-service';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 const recipeService = new RecipeService();
 

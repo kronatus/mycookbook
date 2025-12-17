@@ -159,7 +159,7 @@ export default function OfflineRecipeViewer({ recipeId, fallbackRecipe }: Offlin
           <p className="text-red-600 mb-4">{error}</p>
           {isOffline && (
             <p className="text-sm text-red-500">
-              You're currently offline. This recipe hasn't been cached for offline viewing.
+              You&apos;re currently offline. This recipe hasn&apos;t been cached for offline viewing.
             </p>
           )}
           <button
