@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       count: allRecipes.length,
-      recipes: allRecipes.map(recipe => ({
+      recipes: allRecipes.map((recipe: any) => ({
         id: recipe.id,
         title: recipe.title,
         userId: recipe.userId,
