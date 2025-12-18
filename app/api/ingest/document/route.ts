@@ -31,9 +31,79 @@ export async function POST(request: NextRequest) {
     
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({
-        error: 'Unsupported file type. Only PDF and Word documents are supported.',
-        supportedTypes: ['pdf', 'docx', 'doc']
+        error: 'Unsupported file type. Currently only PDF documents are fully supported. Word document support is temporarily disabled.',
+        supportedTypes: ['pdf'],
+        note: 'Word document support will be restored in a future update'
       }, { status: 400 });
+    }
+
+    // Special handling for Word documents
+    if (file.type.includes('word') || file.type.includes('document')) {
+      console.log('Word document detected - using placeholder approach');
+      
+      // Create a placeholder recipe for Word documents
+      const placeholderRecipe = {
+        title: `Recipe from ${file.name}`,
+        description: `Word document "${file.name}" was uploaded successfully. Automatic text extraction from Word documents is temporarily unavailable due to server compatibility issues. Please edit this recipe to add your content manually, or try converting your document to PDF format.`,
+        ingredients: [
+          { name: 'Please add ingredients manually', quantity: undefined, unit: undefined, notes: 'Edit this recipe to add your ingredients' }
+        ],
+        instructions: [
+          { stepNumber: 1, description: 'Please add cooking instructions manually', duration: undefined }
+        ],
+        cookingTime: undefined,
+        prepTime: undefined,
+        servings: undefined,
+        difficulty: undefined,
+        categories: [],
+        tags: ['imported', 'word-document', 'needs-editing'],
+        sourceUrl: `document://${file.name}`,
+        sourceType: 'document' as const,
+        author: undefined,
+        publishedDate: undefined
+      };
+
+      // Save the placeholder recipe
+      const recipeService = new RecipeService();
+      const createRequest = {
+        title: placeholderRecipe.title,
+        description: placeholderRecipe.description,
+        ingredients: placeholderRecipe.ingredients,
+        instructions: placeholderRecipe.instructions,
+        cookingTime: placeholderRecipe.cookingTime,
+        prepTime: placeholderRecipe.prepTime,
+        servings: placeholderRecipe.servings,
+        difficulty: placeholderRecipe.difficulty,
+        categories: placeholderRecipe.categories,
+        tags: placeholderRecipe.tags,
+        sourceUrl: placeholderRecipe.sourceUrl,
+        sourceType: placeholderRecipe.sourceType,
+        personalNotes: 'This recipe was created from a Word document upload. Please edit to add your actual recipe content.',
+        userId: 'anonymous'
+      };
+
+      const saveResult = await recipeService.createRecipe(createRequest);
+      
+      if (saveResult.success) {
+        return NextResponse.json({
+          success: true,
+          message: 'Word document uploaded successfully. Please edit the created recipe to add your content.',
+          data: {
+            recipes: [saveResult.recipe],
+            summary: {
+              totalExtracted: 1,
+              totalSaved: 1,
+              totalErrors: 0
+            },
+            note: 'Word document parsing is temporarily disabled. A placeholder recipe was created for you to edit.'
+          }
+        }, { status: 201 });
+      } else {
+        return NextResponse.json({
+          error: 'Failed to create placeholder recipe',
+          details: saveResult.error.message
+        }, { status: 500 });
+      }
     }
 
     // Validate file size (10MB limit)

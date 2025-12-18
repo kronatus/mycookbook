@@ -1,38 +1,4 @@
 const pdfParse = require('pdf-parse');
-
-// Dynamic import of mammoth to handle server environment issues
-let mammoth: any = null;
-
-async function getMammoth() {
-  if (!mammoth) {
-    try {
-      // Set up polyfills before importing mammoth
-      if (typeof global !== 'undefined') {
-        // Polyfill missing browser APIs
-        (global as any).DOMMatrix = (global as any).DOMMatrix || class DOMMatrix {
-          constructor() {}
-          static fromFloat32Array() { return new DOMMatrix(); }
-          static fromFloat64Array() { return new DOMMatrix(); }
-          static fromMatrix() { return new DOMMatrix(); }
-        };
-        
-        (global as any).ImageData = (global as any).ImageData || class ImageData {
-          constructor() {}
-        };
-        
-        (global as any).Path2D = (global as any).Path2D || class Path2D {
-          constructor() {}
-        };
-      }
-      
-      mammoth = await import('mammoth');
-    } catch (error) {
-      console.error('Failed to import mammoth:', error);
-      mammoth = null;
-    }
-  }
-  return mammoth;
-}
 import { ContentParser } from './content-parser';
 import { ContentNormalizer } from './content-normalizer';
 import { RecipeIngestionValidator } from './recipe-ingestion-validator';
@@ -210,34 +176,23 @@ export class DocumentIngestionService {
 
   /**
    * Parse Word document
+   * Note: Word document parsing is currently disabled due to server environment compatibility issues
+   * with the mammoth library. This will be implemented in a future update.
    */
   private async parseWord(fileBuffer: Buffer, fileName: string): Promise<ParsedDocument> {
-    try {
-      console.log('Attempting to parse Word document:', fileName);
-      
-      const mammothLib = await getMammoth();
-      
-      if (!mammothLib) {
-        throw new Error('Mammoth library not available');
+    console.log('Word document parsing requested:', fileName);
+    console.log('Note: Automatic Word document parsing is currently unavailable');
+    
+    // For now, return a placeholder that indicates manual entry is needed
+    return {
+      text: `Document: ${fileName}\n\nAutomatic text extraction from Word documents is currently unavailable due to server compatibility issues.\n\nPlease manually enter your recipe content, or try converting your document to PDF format.`,
+      metadata: {
+        fileName,
+        fileSize: fileBuffer.length,
+        fileType: this.getFileType(fileName),
+        note: 'Word document parsing temporarily disabled'
       }
-      
-      // Simple extraction with error handling
-      const result = await mammothLib.extractRawText({ buffer: fileBuffer });
-      
-      console.log('Word document parsed successfully, text length:', result.value.length);
-      
-      return {
-        text: result.value || 'No text content found',
-        metadata: {
-          fileName,
-          fileSize: fileBuffer.length,
-          fileType: this.getFileType(fileName)
-        }
-      };
-    } catch (error) {
-      console.error('Word document parsing failed:', error);
-      throw new Error(`Failed to parse Word document: ${error instanceof Error ? error.message : String(error)}`);
-    }
+    };
   }
 
   /**
