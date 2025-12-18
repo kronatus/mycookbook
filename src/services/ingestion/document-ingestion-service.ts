@@ -189,8 +189,7 @@ export class DocumentIngestionService {
       metadata: {
         fileName,
         fileSize: fileBuffer.length,
-        fileType: this.getFileType(fileName),
-        note: 'Word document parsing temporarily disabled'
+        fileType: this.getFileType(fileName)
       }
     };
   }
