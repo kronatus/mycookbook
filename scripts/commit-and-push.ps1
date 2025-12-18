@@ -262,19 +262,22 @@ $commitBody = ""
 if ($allFiles.Count -gt 1 -and $allFiles.Count -le 10) {
     $commitBody = "`n`nChanges:"
     if ($added.Count -gt 0) {
-        $commitBody += "`n- Added: " + ($added | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5 | Join-String -Separator ", ")
+        $addedFiles = ($added | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5) -join ", "
+        $commitBody += "`n- Added: " + $addedFiles
         if ($added.Count -gt 5) {
             $commitBody += " and $($added.Count - 5) more"
         }
     }
     if ($modified.Count -gt 0) {
-        $commitBody += "`n- Modified: " + ($modified | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5 | Join-String -Separator ", ")
+        $modifiedFiles = ($modified | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5) -join ", "
+        $commitBody += "`n- Modified: " + $modifiedFiles
         if ($modified.Count -gt 5) {
             $commitBody += " and $($modified.Count - 5) more"
         }
     }
     if ($deleted.Count -gt 0) {
-        $commitBody += "`n- Deleted: " + ($deleted | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5 | Join-String -Separator ", ")
+        $deletedFiles = ($deleted | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5) -join ", "
+        $commitBody += "`n- Deleted: " + $deletedFiles
         if ($deleted.Count -gt 5) {
             $commitBody += " and $($deleted.Count - 5) more"
         }
