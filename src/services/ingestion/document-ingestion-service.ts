@@ -1,15 +1,38 @@
 const pdfParse = require('pdf-parse');
 
-// Polyfill for server environment
-if (typeof global !== 'undefined' && !global.DOMMatrix) {
-  global.DOMMatrix = class DOMMatrix {
-    constructor() {
-      // Minimal polyfill
-    }
-  };
-}
+// Dynamic import of mammoth to handle server environment issues
+let mammoth: any = null;
 
-import * as mammoth from 'mammoth';
+async function getMammoth() {
+  if (!mammoth) {
+    try {
+      // Set up polyfills before importing mammoth
+      if (typeof global !== 'undefined') {
+        // Polyfill missing browser APIs
+        (global as any).DOMMatrix = (global as any).DOMMatrix || class DOMMatrix {
+          constructor() {}
+          static fromFloat32Array() { return new DOMMatrix(); }
+          static fromFloat64Array() { return new DOMMatrix(); }
+          static fromMatrix() { return new DOMMatrix(); }
+        };
+        
+        (global as any).ImageData = (global as any).ImageData || class ImageData {
+          constructor() {}
+        };
+        
+        (global as any).Path2D = (global as any).Path2D || class Path2D {
+          constructor() {}
+        };
+      }
+      
+      mammoth = await import('mammoth');
+    } catch (error) {
+      console.error('Failed to import mammoth:', error);
+      mammoth = null;
+    }
+  }
+  return mammoth;
+}
 import { ContentParser } from './content-parser';
 import { ContentNormalizer } from './content-normalizer';
 import { RecipeIngestionValidator } from './recipe-ingestion-validator';
@@ -192,8 +215,14 @@ export class DocumentIngestionService {
     try {
       console.log('Attempting to parse Word document:', fileName);
       
+      const mammothLib = await getMammoth();
+      
+      if (!mammothLib) {
+        throw new Error('Mammoth library not available');
+      }
+      
       // Simple extraction with error handling
-      const result = await mammoth.extractRawText({ buffer: fileBuffer });
+      const result = await mammothLib.extractRawText({ buffer: fileBuffer });
       
       console.log('Word document parsed successfully, text length:', result.value.length);
       
