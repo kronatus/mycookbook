@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DocumentIngestionService } from '../../../../src/services/ingestion/document-ingestion-service';
 import { RecipeService } from '../../../../src/services/recipe-service';
 
 export async function POST(request: NextRequest) {
@@ -120,53 +119,50 @@ export async function POST(request: NextRequest) {
     console.log('Converting file to buffer...');
     const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-    // Process document
+    // Process document based on type
     console.log('Processing document...');
-    const documentIngestionService = new DocumentIngestionService();
     
     let result;
-    try {
-      result = await documentIngestionService.processDocument(
-        fileBuffer,
-        file.name,
-        {
-          maxFileSize: maxSize,
-          allowedTypes: ['pdf', 'docx', 'doc']
+    
+    if (file.type === 'application/pdf') {
+      // Handle PDF processing (this would need pdf-parse import)
+      console.log('PDF processing is not yet implemented');
+      result = {
+        success: false,
+        error: {
+          type: 'parsing',
+          message: 'PDF processing is temporarily disabled'
         }
-      );
-    } catch (processingError) {
-      console.error('Document processing threw an error:', processingError);
-      
-      // If document processing fails completely, create a placeholder recipe
-      const placeholderRecipe = {
-        title: `Recipe from ${file.name}`,
-        description: 'Document uploaded successfully but content extraction failed. Please edit this recipe manually.',
-        ingredients: [
-          { name: 'Add ingredients manually', quantity: undefined, unit: undefined, notes: undefined }
-        ],
-        instructions: [
-          { stepNumber: 1, description: 'Add cooking instructions manually', duration: undefined }
-        ],
-        cookingTime: undefined,
-        prepTime: undefined,
-        servings: undefined,
-        difficulty: undefined,
-        categories: [],
-        tags: ['imported'],
-        sourceUrl: `document://${file.name}`,
-        sourceType: 'document' as const,
-        author: undefined,
-        publishedDate: undefined
       };
-      
+    } else {
+      // Handle Word documents and other formats
+      console.log('Creating placeholder for non-PDF document');
       result = {
         success: true,
-        recipes: [placeholderRecipe],
+        recipes: [{
+          title: `Recipe from ${file.name}`,
+          description: 'Document uploaded successfully. Automatic text extraction is currently unavailable. Please edit this recipe manually.',
+          ingredients: [
+            { name: 'Add ingredients manually', quantity: undefined, unit: undefined, notes: undefined }
+          ],
+          instructions: [
+            { stepNumber: 1, description: 'Add cooking instructions manually', duration: undefined }
+          ],
+          cookingTime: undefined,
+          prepTime: undefined,
+          servings: undefined,
+          difficulty: undefined,
+          categories: [],
+          tags: ['imported', 'needs-editing'],
+          sourceUrl: `document://${file.name}`,
+          sourceType: 'document' as const,
+          author: undefined,
+          publishedDate: undefined
+        }],
         metadata: {
           fileName: file.name,
           fileSize: file.size,
-          fileType: file.type,
-          extractedText: 'Content extraction failed'
+          fileType: file.type
         }
       };
     }
