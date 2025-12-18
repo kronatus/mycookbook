@@ -53,14 +53,53 @@ export async function POST(request: NextRequest) {
     // Process document
     console.log('Processing document...');
     const documentIngestionService = new DocumentIngestionService();
-    const result = await documentIngestionService.processDocument(
-      fileBuffer,
-      file.name,
-      {
-        maxFileSize: maxSize,
-        allowedTypes: ['pdf', 'docx', 'doc']
-      }
-    );
+    
+    let result;
+    try {
+      result = await documentIngestionService.processDocument(
+        fileBuffer,
+        file.name,
+        {
+          maxFileSize: maxSize,
+          allowedTypes: ['pdf', 'docx', 'doc']
+        }
+      );
+    } catch (processingError) {
+      console.error('Document processing threw an error:', processingError);
+      
+      // If document processing fails completely, create a placeholder recipe
+      const placeholderRecipe = {
+        title: `Recipe from ${file.name}`,
+        description: 'Document uploaded successfully but content extraction failed. Please edit this recipe manually.',
+        ingredients: [
+          { name: 'Add ingredients manually', quantity: undefined, unit: undefined, notes: undefined }
+        ],
+        instructions: [
+          { stepNumber: 1, description: 'Add cooking instructions manually', duration: undefined }
+        ],
+        cookingTime: undefined,
+        prepTime: undefined,
+        servings: undefined,
+        difficulty: undefined,
+        categories: [],
+        tags: ['imported'],
+        sourceUrl: `document://${file.name}`,
+        sourceType: 'document' as const,
+        author: undefined,
+        publishedDate: undefined
+      };
+      
+      result = {
+        success: true,
+        recipes: [placeholderRecipe],
+        metadata: {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          extractedText: 'Content extraction failed'
+        }
+      };
+    }
 
     console.log('Document processing result:', result.success ? 'Success' : 'Failed');
 
