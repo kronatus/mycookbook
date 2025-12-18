@@ -5,19 +5,10 @@ import { authOptions } from '@/lib/auth';
 
 const recipeService = new RecipeService();
 
-// GET /api/recipes/count - Get the total count of recipes for the authenticated user
+// GET /api/recipes/count - Get the total count of all recipes (anonymous access allowed)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const result = await recipeService.getRecipeCount(session.user.id);
+    const result = await recipeService.getTotalRecipeCount();
 
     if (!result.success) {
       return NextResponse.json(

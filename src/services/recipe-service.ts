@@ -566,4 +566,58 @@ export class RecipeService {
       };
     }
   }
+
+  /**
+   * Get all recipes (not user-specific) - for anonymous access
+   */
+  async getAllRecipes(filters?: RecipeFilters): Promise<{ success: true; recipes: Recipe[] } | { success: false; error: RecipeServiceError }> {
+    try {
+      let recipes: Recipe[];
+
+      if (filters && Object.keys(filters).length > 0) {
+        // Apply filters but don't filter by userId
+        recipes = await this.repository.findWithFilters(filters);
+      } else {
+        // Get all recipes from database
+        recipes = await this.repository.findAll();
+      }
+
+      return {
+        success: true,
+        recipes
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          type: 'database',
+          message: 'Failed to get recipes',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
+  /**
+   * Get total count of all recipes (not user-specific) - for anonymous access
+   */
+  async getTotalRecipeCount(): Promise<{ success: true; count: number } | { success: false; error: RecipeServiceError }> {
+    try {
+      const count = await this.repository.countAll();
+      
+      return {
+        success: true,
+        count
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          type: 'database',
+          message: 'Failed to get total recipe count',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
 }

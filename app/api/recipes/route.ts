@@ -5,18 +5,9 @@ import { authOptions } from '@/lib/auth';
 
 const recipeService = new RecipeService();
 
-// GET /api/recipes - Get all recipes for the authenticated user
+// GET /api/recipes - Get all recipes (anonymous access allowed)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     
     // Parse query parameters for filtering
@@ -30,8 +21,8 @@ export async function GET(request: NextRequest) {
     let result;
 
     if (search) {
-      // Search recipes - convert new search result format to old format for backward compatibility
-      const searchResult = await recipeService.searchRecipes(session.user.id, search, false);
+      // Search all recipes (not user-specific)
+      const searchResult = await recipeService.searchRecipes('anonymous', search, false);
       if (!searchResult.success) {
         return NextResponse.json(
           { error: searchResult.error?.message || 'Search failed' },
@@ -44,7 +35,7 @@ export async function GET(request: NextRequest) {
         recipes: searchResult.results.map(r => r.recipe)
       };
     } else {
-      // Get recipes with optional filters
+      // Get all recipes with optional filters (not user-specific)
       const filters = {
         ...(categories && { categories }),
         ...(tags && { tags }),
@@ -53,7 +44,7 @@ export async function GET(request: NextRequest) {
         ...(maxPrepTime && { maxPrepTime }),
       };
 
-      result = await recipeService.getUserRecipes(session.user.id, Object.keys(filters).length > 0 ? filters : undefined);
+      result = await recipeService.getAllRecipes(Object.keys(filters).length > 0 ? filters : undefined);
     }
 
     if (!result.success) {
@@ -77,18 +68,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/recipes - Create a new recipe
+// POST /api/recipes - Create a new recipe (anonymous access allowed)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     
     // Validate required fields
@@ -101,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     const createRequest = {
       ...body,
-      userId: session.user.id
+      userId: 'anonymous' // Allow anonymous recipe creation
     };
 
     const result = await recipeService.createRecipe(createRequest);

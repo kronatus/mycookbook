@@ -200,4 +200,64 @@ export class RecipeRepository {
       .where(eq(recipes.userId, userId));
     return result.count;
   }
+
+  /**
+   * Find all recipes (not user-specific) - for anonymous access
+   */
+  async findAll(): Promise<Recipe[]> {
+    return await db
+      .select()
+      .from(recipes)
+      .orderBy(desc(recipes.updatedAt));
+  }
+
+  /**
+   * Find all recipes with filters (not user-specific) - for anonymous access
+   */
+  async findWithFilters(filters: RecipeFilters): Promise<Recipe[]> {
+    // Build WHERE conditions array for better query optimization
+    const conditions = [];
+
+    // Apply category filter using JSONB contains (uses GIN index)
+    if (filters.categories && filters.categories.length > 0) {
+      conditions.push(sql`${recipes.categories} ?| ${filters.categories}`);
+    }
+
+    // Apply tags filter using JSONB contains (uses GIN index)
+    if (filters.tags && filters.tags.length > 0) {
+      conditions.push(sql`${recipes.tags} ?| ${filters.tags}`);
+    }
+
+    // Apply difficulty filter
+    if (filters.difficulty) {
+      conditions.push(eq(recipes.difficulty, filters.difficulty));
+    }
+
+    // Apply cooking time filter
+    if (filters.maxCookingTime) {
+      conditions.push(sql`${recipes.cookingTime} <= ${filters.maxCookingTime}`);
+    }
+
+    // Apply prep time filter
+    if (filters.maxPrepTime) {
+      conditions.push(sql`${recipes.prepTime} <= ${filters.maxPrepTime}`);
+    }
+
+    // Use composite index for ordering
+    return await db
+      .select()
+      .from(recipes)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(recipes.updatedAt));
+  }
+
+  /**
+   * Count all recipes (not user-specific) - for anonymous access
+   */
+  async countAll(): Promise<number> {
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(recipes);
+    return result.count;
+  }
 }
