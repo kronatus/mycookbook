@@ -59,12 +59,30 @@ export function RecipeIngestionForm() {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Uploading file:', file.name, file.size, file.type);
+      
       const response = await fetch('/api/ingest/document', {
         method: 'POST',
         body: formData,
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        setResult({ 
+          success: false, 
+          error: `Invalid response format. Status: ${response.status}, Response: ${responseText.substring(0, 200)}` 
+        });
+        return;
+      }
 
       if (response.ok) {
         setResult({ success: true, recipe: data.data?.recipes?.[0] });
