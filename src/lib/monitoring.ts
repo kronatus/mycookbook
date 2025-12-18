@@ -149,7 +149,7 @@ class MonitoringService {
       query: query.substring(0, 200), // Truncate long queries
       duration,
       success,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       environment: this.environment,
     };
 

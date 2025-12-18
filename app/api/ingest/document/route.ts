@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-// Temporarily disabled for build - will be fixed in document ingestion task
-// import { DocumentIngestionService } from '../../../../src/services/ingestion/document-ingestion-service';
+import { DocumentIngestionService } from '../../../../src/services/ingestion/document-ingestion-service';
 import { RecipeService } from '../../../../src/services/recipe-service';
 import { createSuccessResponse, createErrorResponse } from '../../../../src/utils/api-response';
-import { withAuth, withErrorHandling, compose } from '../../../../src/middleware/api-middleware';
+import { withErrorHandling, compose } from '../../../../src/middleware/api-middleware';
 
 interface DocumentIngestionProgress {
   stage: 'uploading' | 'parsing' | 'extracting' | 'validating' | 'saving' | 'complete';
@@ -16,14 +15,8 @@ interface DocumentIngestionProgress {
 
 /**
  * POST /api/ingest/document - Upload and process document for recipe extraction
- * Temporarily disabled - will be implemented in document ingestion task
  */
-async function handleDocumentIngestion(request: any) {
-  return NextResponse.json(
-    { error: 'Document ingestion not yet implemented' },
-    { status: 501 }
-  );
-  /*
+async function handleDocumentIngestion(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -110,7 +103,7 @@ async function handleDocumentIngestion(request: any) {
           sourceUrl: blob.url, // Reference to uploaded document
           sourceType: 'document' as const,
           personalNotes: extractedRecipe.author ? `Original author: ${extractedRecipe.author}` : undefined,
-          userId: request.userId,
+          userId: 'anonymous', // TODO: Add proper auth
         };
 
         const saveResult = await recipeService.createRecipe(createRequest);
@@ -150,18 +143,8 @@ async function handleDocumentIngestion(request: any) {
       error instanceof Error ? error.message : 'Unknown error'
     );
   }
-  */
 }
 
-// Temporarily disabled export to avoid build issues
-// export const POST = compose(
-//   withErrorHandling,
-//   withAuth
-// )(handleDocumentIngestion);
-
 export async function POST(request: NextRequest) {
-  return NextResponse.json(
-    { error: 'Document ingestion not yet implemented' },
-    { status: 501 }
-  );
+  return withErrorHandling(handleDocumentIngestion)(request);
 }

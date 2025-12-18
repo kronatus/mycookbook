@@ -43,7 +43,7 @@ async function handleUrlIngestion(request: any, body: UrlIngestionRequest) {
 
   const result = await urlIngestionService.ingestFromUrl({
     url,
-    userId: request.userId,
+    userId: 'anonymous', // TODO: Add proper auth
     options
   });
 
@@ -97,28 +97,12 @@ async function handleGetInfo(request: any) {
   });
 }
 
-// Temporarily disabled exports to avoid build issues
-// export const POST = compose(
-//   withErrorHandling,
-//   withAuth,
-//   withJsonValidation
-// )(handleUrlIngestion);
-
-// export const GET = compose(
-//   withErrorHandling,
-//   withAuth
-// )(handleGetInfo);
-
 export async function POST(request: NextRequest) {
-  return NextResponse.json(
-    { error: 'URL ingestion not yet implemented' },
-    { status: 501 }
-  );
+  return withErrorHandling(
+    withJsonValidation(handleUrlIngestion)
+  )(request);
 }
 
 export async function GET(request: NextRequest) {
-  return NextResponse.json(
-    { error: 'Ingestion info not yet implemented' },
-    { status: 501 }
-  );
+  return withErrorHandling(handleGetInfo)(request);
 }
