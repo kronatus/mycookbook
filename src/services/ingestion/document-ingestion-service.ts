@@ -1,4 +1,14 @@
 const pdfParse = require('pdf-parse');
+
+// Polyfill for server environment
+if (typeof global !== 'undefined' && !global.DOMMatrix) {
+  global.DOMMatrix = class DOMMatrix {
+    constructor() {
+      // Minimal polyfill
+    }
+  };
+}
+
 import * as mammoth from 'mammoth';
 import { ContentParser } from './content-parser';
 import { ContentNormalizer } from './content-normalizer';
@@ -180,10 +190,15 @@ export class DocumentIngestionService {
    */
   private async parseWord(fileBuffer: Buffer, fileName: string): Promise<ParsedDocument> {
     try {
+      console.log('Attempting to parse Word document:', fileName);
+      
+      // Simple extraction with error handling
       const result = await mammoth.extractRawText({ buffer: fileBuffer });
       
+      console.log('Word document parsed successfully, text length:', result.value.length);
+      
       return {
-        text: result.value,
+        text: result.value || 'No text content found',
         metadata: {
           fileName,
           fileSize: fileBuffer.length,
@@ -191,6 +206,7 @@ export class DocumentIngestionService {
         }
       };
     } catch (error) {
+      console.error('Word document parsing failed:', error);
       throw new Error(`Failed to parse Word document: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
