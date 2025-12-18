@@ -150,6 +150,50 @@ if ($deleted.Count -gt $added.Count -and $deleted.Count -gt $modified.Count) {
     }
 }
 
+# Function to extract meaningful context from file changes
+function Get-DetailedDescription {
+    param($files, $type)
+    
+    $details = @()
+    
+    foreach ($file in $files) {
+        $fileName = Split-Path -Leaf $file
+        $dirName = Split-Path -Parent $file
+        
+        # Extract context based on file type and location
+        if ($file -match "components/(.+)\.tsx?$") {
+            $componentName = $matches[1]
+            $details += "update $componentName component"
+        }
+        elseif ($file -match "app/api/(.+)/route\.ts$") {
+            $apiPath = $matches[1]
+            $details += "update /$apiPath API endpoint"
+        }
+        elseif ($file -match "src/services/(.+)\.ts$") {
+            $serviceName = $matches[1] -replace "-service", ""
+            $details += "update $serviceName service"
+        }
+        elseif ($file -match "src/db/schema/(.+)\.ts$") {
+            $schemaName = $matches[1]
+            $details += "update $schemaName schema"
+        }
+        elseif ($file -match "\.md$") {
+            $docName = $fileName -replace "\.md$", ""
+            $details += "update $docName documentation"
+        }
+        elseif ($file -match "scripts/(.+)\.(ps1|sh|ts|js)$") {
+            $scriptName = $matches[1]
+            $details += "update $scriptName script"
+        }
+        elseif ($file -match "\.config\.(js|ts|mjs)$") {
+            $configName = $fileName -replace "\.(js|ts|mjs)$", ""
+            $details += "update $configName configuration"
+        }
+    }
+    
+    return $details
+}
+
 # Build commit message
 $commitMessage = $commitType
 if ($scope) {
@@ -157,23 +201,93 @@ if ($scope) {
 }
 $commitMessage += ": "
 
-# Generate description based on specific files
-if ($modified.Count -eq 1 -and $added.Count -eq 0 -and $deleted.Count -eq 0) {
-    $fileName = Split-Path -Leaf $modified[0]
-    $commitMessage += "update $fileName"
-} elseif ($added.Count -eq 1 -and $modified.Count -eq 0 -and $deleted.Count -eq 0) {
-    $fileName = Split-Path -Leaf $added[0]
-    $commitMessage += "add $fileName"
-} elseif ($deleted.Count -eq 1 -and $added.Count -eq 0 -and $modified.Count -eq 0) {
-    $fileName = Split-Path -Leaf $deleted[0]
-    $commitMessage += "remove $fileName"
-} else {
+# Generate detailed description
+$detailedDesc = @()
+
+# Get details for each type of change
+if ($added.Count -gt 0) {
+    $addedDetails = Get-DetailedDescription $added "added"
+    if ($addedDetails.Count -gt 0) {
+        $detailedDesc += $addedDetails
+    }
+}
+
+if ($modified.Count -gt 0) {
+    $modifiedDetails = Get-DetailedDescription $modified "modified"
+    if ($modifiedDetails.Count -gt 0) {
+        $detailedDesc += $modifiedDetails
+    }
+}
+
+if ($deleted.Count -gt 0) {
+    $deletedDetails = Get-DetailedDescription $deleted "deleted"
+    if ($deletedDetails.Count -gt 0) {
+        $detailedDesc += $deletedDetails
+    }
+}
+
+# Build the description
+if ($detailedDesc.Count -eq 1) {
+    $commitMessage += $detailedDesc[0]
+}
+elseif ($detailedDesc.Count -eq 2) {
+    $commitMessage += $detailedDesc[0] + " and " + $detailedDesc[1]
+}
+elseif ($detailedDesc.Count -gt 2 -and $detailedDesc.Count -le 4) {
+    $commitMessage += ($detailedDesc[0..($detailedDesc.Count-2)] -join ", ") + ", and " + $detailedDesc[-1]
+}
+elseif ($detailedDesc.Count -gt 4) {
+    # Too many changes, use summary
     $commitMessage += $description
 }
+else {
+    # Fallback to generic description
+    if ($modified.Count -eq 1 -and $added.Count -eq 0 -and $deleted.Count -eq 0) {
+        $fileName = Split-Path -Leaf $modified[0]
+        $commitMessage += "update $fileName"
+    } elseif ($added.Count -eq 1 -and $modified.Count -eq 0 -and $deleted.Count -eq 0) {
+        $fileName = Split-Path -Leaf $added[0]
+        $commitMessage += "add $fileName"
+    } elseif ($deleted.Count -eq 1 -and $added.Count -eq 0 -and $modified.Count -eq 0) {
+        $fileName = Split-Path -Leaf $deleted[0]
+        $commitMessage += "remove $fileName"
+    } else {
+        $commitMessage += $description
+    }
+}
+
+# Add detailed body if there are multiple significant changes
+$commitBody = ""
+if ($allFiles.Count -gt 1 -and $allFiles.Count -le 10) {
+    $commitBody = "`n`nChanges:"
+    if ($added.Count -gt 0) {
+        $commitBody += "`n- Added: " + ($added | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5 | Join-String -Separator ", ")
+        if ($added.Count -gt 5) {
+            $commitBody += " and $($added.Count - 5) more"
+        }
+    }
+    if ($modified.Count -gt 0) {
+        $commitBody += "`n- Modified: " + ($modified | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5 | Join-String -Separator ", ")
+        if ($modified.Count -gt 5) {
+            $commitBody += " and $($modified.Count - 5) more"
+        }
+    }
+    if ($deleted.Count -gt 0) {
+        $commitBody += "`n- Deleted: " + ($deleted | ForEach-Object { Split-Path -Leaf $_ } | Select-Object -First 5 | Join-String -Separator ", ")
+        if ($deleted.Count -gt 5) {
+            $commitBody += " and $($deleted.Count - 5) more"
+        }
+    }
+}
+
+$fullCommitMessage = $commitMessage + $commitBody
 
 # Show proposed commit message
 Write-Host "Proposed commit message:" -ForegroundColor Cyan
 Write-Host "  $commitMessage" -ForegroundColor White
+if ($commitBody) {
+    Write-Host "$commitBody" -ForegroundColor Gray
+}
 Write-Host ""
 
 # Ask for confirmation or custom message
@@ -181,7 +295,15 @@ $choice = Read-Host "Use this message? (y/n/custom)"
 
 if ($choice -eq "custom" -or $choice -eq "c") {
     Write-Host ""
-    $commitMessage = Read-Host "Enter custom commit message"
+    Write-Host "Enter commit message (first line is title, leave blank line then add body):" -ForegroundColor Cyan
+    $commitMessage = Read-Host "Title"
+    Write-Host "Body (optional, press Enter to skip):" -ForegroundColor Gray
+    $bodyLine = Read-Host
+    if ($bodyLine) {
+        $fullCommitMessage = $commitMessage + "`n`n" + $bodyLine
+    } else {
+        $fullCommitMessage = $commitMessage
+    }
 } elseif ($choice -ne "y" -and $choice -ne "Y") {
     Write-Host "Commit cancelled" -ForegroundColor Yellow
     exit 0
@@ -199,7 +321,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Commit
 Write-Host "Creating commit..." -ForegroundColor Yellow
-git commit -m $commitMessage
+git commit -m $fullCommitMessage
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Failed to create commit" -ForegroundColor Red
