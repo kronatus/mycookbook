@@ -183,8 +183,7 @@ export async function POST(request: NextRequest) {
           break;
       }
       return NextResponse.json({
-        error: result.error!.message,
-        details: result.error!.details
+        error: result.error!.message
       }, { status });
     }
 
