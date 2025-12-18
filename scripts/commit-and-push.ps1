@@ -1,5 +1,6 @@
 # Intelligent Commit and Push Script
-# Analyzes changes and generates meaningful commit messages
+# Analyzes changes and generates detailed, meaningful commit messages
+# Enhanced with file-specific context and detailed change descriptions
 
 $ErrorActionPreference = "Stop"
 
